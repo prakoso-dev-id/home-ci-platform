@@ -1,0 +1,18 @@
+{
+  "name": "home-ci-platform",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:types": "npm run build -w packages/shared-types",
+    "build:engine": "npm run build -w apps/deploy-engine",
+    "build:dashboard": "npm run build -w apps/dashboard",
+    "dev:engine": "npm run dev -w apps/deploy-engine",
+    "dev:dashboard": "npm run dev -w apps/dashboard"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

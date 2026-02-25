@@ -1,0 +1,18 @@
+{
+    "extends": "../../tsconfig.base.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "typeRoots": [
+            "../../node_modules/@types"
+        ],
+        "types": [
+            "node",
+            "better-sqlite3",
+            "dockerode"
+        ]
+    },
+    "include": [
+        "src"
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "projects": {
+        "my-web-app": {
+            "name": "my-web-app",
+            "composePath": "/opt/stacks/my-web-app",
+            "composeFile": "docker-compose.yml",
+            "description": "My Web Application"
+        },
+        "my-api": {
+            "name": "my-api",
+            "composePath": "/opt/stacks/my-api",
+            "composeFile": "docker-compose.yml",
+            "description": "My Backend API"
+        }
+    }
+}

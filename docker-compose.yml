@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  deploy-engine:
+    build:
+      context: .
+      dockerfile: apps/deploy-engine/Dockerfile
+    container_name: home-ci-engine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      - DEPLOY_TOKEN=${DEPLOY_TOKEN}
+      - DEPLOY_ENGINE_PORT=4000
+      - DEPLOY_ENGINE_HOST=0.0.0.0
+      - DATABASE_PATH=/data/deployments.db
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - engine-data:/data
+      # Mount your compose project directories (add as needed)
+      # - /opt/stacks:/opt/stacks:ro
+    networks:
+      - home-ci
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+    container_name: home-ci-dashboard
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3000:3000"
+    environment:
+      - NEXT_PUBLIC_ENGINE_URL=http://deploy-engine:4000
+      - DEPLOY_TOKEN=${DEPLOY_TOKEN}
+    depends_on:
+      - deploy-engine
+    networks:
+      - home-ci
+
+volumes:
+  engine-data:
+
+networks:
+  home-ci:
+    driver: bridge

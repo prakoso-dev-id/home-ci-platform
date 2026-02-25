@@ -1,0 +1,56 @@
+name: Deploy Project
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project name to deploy'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Deploy via Home CI Engine
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          PROJECT_NAME: ${{ github.event.inputs.project || 'my-web-app' }}
+        run: |
+          echo "🚀 Deploying project: $PROJECT_NAME"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            http://127.0.0.1:4000/deploy \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $DEPLOY_TOKEN" \
+            -d "{\"project\": \"$PROJECT_NAME\"}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "Response: $BODY"
+          echo "HTTP Status: $HTTP_CODE"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "❌ Deployment request failed"
+            exit 1
+          fi
+
+          echo "✅ Deployment request accepted"
+
+      - name: Wait and Check Status
+        env:
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+          PROJECT_NAME: ${{ github.event.inputs.project || 'my-web-app' }}
+        run: |
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 10
+
+          STATUS=$(curl -s \
+            http://127.0.0.1:4000/status/$PROJECT_NAME \
+            -H "Authorization: Bearer $DEPLOY_TOKEN")
+
+          echo "Status: $STATUS"
