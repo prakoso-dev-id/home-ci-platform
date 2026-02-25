@@ -27,5 +27,5 @@ COPY --from=base /app/apps/dashboard/.next/standalone ./
 COPY --from=base /app/apps/dashboard/.next/static ./apps/dashboard/.next/static
 COPY --from=base /app/apps/dashboard/public ./apps/dashboard/public
 
-EXPOSE 3000
+EXPOSE 3001
 CMD ["node", "apps/dashboard/server.js"]
