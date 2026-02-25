@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import StatusBadge from '@/components/StatusBadge';
+import DeployModal from '@/components/DeployModal';
+import { useToast } from '@/components/Toast';
 import { fetchProjects, deployProject, destroyProject } from '@/lib/api';
 import type { ProjectWithStatus } from '@home-ci/shared-types';
 
@@ -9,21 +11,24 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState<ProjectWithStatus[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+    const [activeModal, setActiveModal] = useState<{
+        project: string;
+        action: 'deploy' | 'destroy';
+    } | null>(null);
+    const { addToast } = useToast();
 
     const loadProjects = useCallback(async () => {
         try {
             const data = await fetchProjects();
             setProjects(data);
             setError(null);
-        } catch (err) {
+        } catch {
             setError('Failed to connect to Deploy Engine');
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Initial load + polling every 5s
     useEffect(() => {
         loadProjects();
         const interval = setInterval(loadProjects, 5000);
@@ -31,35 +36,41 @@ export default function ProjectsPage() {
     }, [loadProjects]);
 
     const handleDeploy = async (project: string) => {
-        if (actionLoading[project]) return;
-        setActionLoading((prev) => ({ ...prev, [project]: true }));
+        setActiveModal({ project, action: 'deploy' });
+        addToast('info', `Starting deployment for ${project}`, 'Deploy');
         try {
             await deployProject(project);
         } catch {
-            // Error will be reflected on next poll
-        } finally {
-            setTimeout(() => {
-                setActionLoading((prev) => ({ ...prev, [project]: false }));
-                loadProjects();
-            }, 1500);
+            // Error handled via SSE stream
         }
     };
 
     const handleDestroy = async (project: string) => {
-        if (actionLoading[project]) return;
         const confirmed = window.confirm(`Are you sure you want to destroy "${project}"?`);
         if (!confirmed) return;
-        setActionLoading((prev) => ({ ...prev, [project]: true }));
+        setActiveModal({ project, action: 'destroy' });
+        addToast('info', `Stopping ${project}`, 'Destroy');
         try {
             await destroyProject(project);
         } catch {
-            // Error will be reflected on next poll
-        } finally {
-            setTimeout(() => {
-                setActionLoading((prev) => ({ ...prev, [project]: false }));
-                loadProjects();
-            }, 1500);
+            // Error handled via SSE stream
         }
+    };
+
+    const handleModalComplete = (status: 'success' | 'failed') => {
+        if (!activeModal) return;
+        const { project, action } = activeModal;
+        if (status === 'success') {
+            addToast('success', `${action === 'deploy' ? 'Deployment' : 'Destroy'} of ${project} completed`, 'Success');
+        } else {
+            addToast('error', `${action === 'deploy' ? 'Deployment' : 'Destroy'} of ${project} failed`, 'Error');
+        }
+        setTimeout(loadProjects, 1000);
+    };
+
+    const handleModalClose = () => {
+        setActiveModal(null);
+        loadProjects();
     };
 
     function getProjectStatus(project: ProjectWithStatus): string {
@@ -126,7 +137,7 @@ export default function ProjectsPage() {
                 <div className="card-grid">
                     {projects.map((project) => {
                         const status = getProjectStatus(project);
-                        const isLoading = actionLoading[project.name] ?? false;
+                        const isModalActive = activeModal?.project === project.name;
                         return (
                             <div className="card" key={project.name}>
                                 <div
@@ -186,21 +197,14 @@ export default function ProjectsPage() {
                                     <button
                                         className="btn btn-primary"
                                         onClick={() => handleDeploy(project.name)}
-                                        disabled={isLoading}
+                                        disabled={isModalActive}
                                     >
-                                        {isLoading ? (
-                                            <>
-                                                <span className="spinner" style={{ width: 14, height: 14, margin: 0 }} />
-                                                Deploying...
-                                            </>
-                                        ) : (
-                                            '🚀 Deploy'
-                                        )}
+                                        🚀 Deploy
                                     </button>
                                     <button
                                         className="btn btn-danger"
                                         onClick={() => handleDestroy(project.name)}
-                                        disabled={isLoading}
+                                        disabled={isModalActive}
                                     >
                                         🗑 Destroy
                                     </button>
@@ -215,6 +219,15 @@ export default function ProjectsPage() {
                         );
                     })}
                 </div>
+            )}
+
+            {activeModal && (
+                <DeployModal
+                    project={activeModal.project}
+                    action={activeModal.action}
+                    onClose={handleModalClose}
+                    onComplete={handleModalComplete}
+                />
             )}
         </>
     );

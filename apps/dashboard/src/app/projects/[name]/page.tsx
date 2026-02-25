@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import StatusBadge from '@/components/StatusBadge';
 import LogViewer from '@/components/LogViewer';
 import DeploymentHistory from '@/components/DeploymentHistory';
+import DeployModal from '@/components/DeployModal';
+import { useToast } from '@/components/Toast';
 import {
     fetchProjectStatus,
     fetchProjectLogs,
@@ -34,8 +36,11 @@ export default function ProjectDetailPage() {
     const [deployments, setDeployments] = useState<Deployment[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [actionLoading, setActionLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'overview' | 'logs' | 'history'>('overview');
+    const [activeModal, setActiveModal] = useState<{
+        action: 'deploy' | 'destroy';
+    } | null>(null);
+    const { addToast } = useToast();
 
     const loadData = useCallback(async () => {
         try {
@@ -63,29 +68,41 @@ export default function ProjectDetailPage() {
     }, [loadData]);
 
     const handleDeploy = async () => {
-        setActionLoading(true);
+        setActiveModal({ action: 'deploy' });
+        addToast('info', `Starting deployment for ${projectName}`, 'Deploy');
         try {
             await deployProject(projectName);
-        } finally {
-            setTimeout(() => {
-                setActionLoading(false);
-                loadData();
-            }, 2000);
+        } catch {
+            // handled via SSE
         }
     };
 
     const handleDestroy = async () => {
         const confirmed = window.confirm(`Are you sure you want to destroy "${projectName}"?`);
         if (!confirmed) return;
-        setActionLoading(true);
+        setActiveModal({ action: 'destroy' });
+        addToast('info', `Stopping ${projectName}`, 'Destroy');
         try {
             await destroyProject(projectName);
-        } finally {
-            setTimeout(() => {
-                setActionLoading(false);
-                loadData();
-            }, 2000);
+        } catch {
+            // handled via SSE
         }
+    };
+
+    const handleModalComplete = (status: 'success' | 'failed') => {
+        if (!activeModal) return;
+        const { action } = activeModal;
+        if (status === 'success') {
+            addToast('success', `${action === 'deploy' ? 'Deployment' : 'Destroy'} completed`, 'Success');
+        } else {
+            addToast('error', `${action === 'deploy' ? 'Deployment' : 'Destroy'} failed`, 'Error');
+        }
+        setTimeout(loadData, 1000);
+    };
+
+    const handleModalClose = () => {
+        setActiveModal(null);
+        loadData();
     };
 
     function getStatsForContainer(containerId: string): ContainerStats | undefined {
@@ -130,14 +147,14 @@ export default function ProjectDetailPage() {
                         <button
                             className="btn btn-primary"
                             onClick={handleDeploy}
-                            disabled={actionLoading}
+                            disabled={!!activeModal}
                         >
-                            {actionLoading ? 'Working...' : '🚀 Deploy'}
+                            🚀 Deploy
                         </button>
                         <button
                             className="btn btn-danger"
                             onClick={handleDestroy}
-                            disabled={actionLoading}
+                            disabled={!!activeModal}
                         >
                             🗑 Destroy
                         </button>
@@ -292,6 +309,15 @@ export default function ProjectDetailPage() {
                     <h2 className="section-title">Deployment History</h2>
                     <DeploymentHistory deployments={deployments} />
                 </div>
+            )}
+
+            {activeModal && (
+                <DeployModal
+                    project={projectName}
+                    action={activeModal.action}
+                    onClose={handleModalClose}
+                    onComplete={handleModalComplete}
+                />
             )}
         </>
     );

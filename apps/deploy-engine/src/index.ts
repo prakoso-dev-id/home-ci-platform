@@ -4,6 +4,7 @@ import { authHook } from './auth';
 import { initializeDatabase, closeDatabase } from './services/database.service';
 import { deployRoutes } from './routes/deploy.routes';
 import { statusRoutes } from './routes/status.routes';
+import { streamRoutes } from './routes/stream.routes';
 
 async function main() {
     // Initialize database
@@ -42,6 +43,7 @@ async function main() {
     // Register routes
     await app.register(deployRoutes);
     await app.register(statusRoutes);
+    await app.register(streamRoutes);
 
     // Graceful shutdown
     const shutdown = async () => {

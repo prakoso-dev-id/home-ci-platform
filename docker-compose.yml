@@ -32,6 +32,9 @@ services:
     environment:
       - NEXT_PUBLIC_ENGINE_URL=http://deploy-engine:4000
       - DEPLOY_TOKEN=${DEPLOY_TOKEN}
+      - DASHBOARD_USER=${DASHBOARD_USER:-admin}
+      - DASHBOARD_PASS=${DASHBOARD_PASS}
+      - SESSION_SECRET=${SESSION_SECRET}
       - PORT=3001
       - HOSTNAME=0.0.0.0
     depends_on:

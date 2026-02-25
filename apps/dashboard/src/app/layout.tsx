@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { ToastProvider } from '@/components/Toast';
+import { Navbar } from '@/components/Navbar';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -20,12 +22,10 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                <nav className="navbar">
-                    <a href="/" className="navbar-brand">
-                        <span>⚡</span> Home CI Platform
-                    </a>
-                </nav>
-                <main className="container">{children}</main>
+                <ToastProvider>
+                    <Navbar />
+                    <main className="container">{children}</main>
+                </ToastProvider>
             </body>
         </html>
     );
