@@ -5,8 +5,12 @@ const DASHBOARD_USER = process.env.DASHBOARD_USER || 'admin';
 const DASHBOARD_PASS = process.env.DASHBOARD_PASS || 'admin';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'home-ci-default-secret-change-me';
 
-function createSessionToken(username: string): string {
-    const payload = `${username}:${SESSION_SECRET}:${Math.floor(Date.now() / 86400000)}`;
+// Force Node.js runtime for this route (supports crypto module)
+export const runtime = 'nodejs';
+
+function createSessionToken(): string {
+    const day = Math.floor(Date.now() / 86400000);
+    const payload = `${SESSION_SECRET}:${day}`;
     return createHash('sha256').update(payload).digest('hex');
 }
 
@@ -22,14 +26,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const token = createSessionToken(username);
+        const token = createSessionToken();
         const response = NextResponse.json({ success: true });
 
         response.cookies.set('session', token, {
             httpOnly: true,
             sameSite: 'lax',
             path: '/',
-            maxAge: 86400, // 24 hours
+            maxAge: 86400,
         });
 
         return response;

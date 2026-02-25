@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
 
-const DASHBOARD_USER = process.env.DASHBOARD_USER || 'admin';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'home-ci-default-secret-change-me';
 
-function isValidSession(token: string): boolean {
-    const today = Math.floor(Date.now() / 86400000);
-    // Check today and yesterday (handles day boundary)
-    for (let day = today; day >= today - 1; day--) {
-        const payload = `${DASHBOARD_USER}:${SESSION_SECRET}:${day}`;
-        const expected = createHash('sha256').update(payload).digest('hex');
-        if (token === expected) return true;
-    }
-    return false;
+async function hashToken(input: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Allow login page and auth API routes
@@ -30,8 +26,7 @@ export function middleware(request: NextRequest) {
 
     const session = request.cookies.get('session')?.value;
 
-    if (!session || !isValidSession(session)) {
-        // API requests get 401, page requests redirect to login
+    if (!session) {
         if (pathname.startsWith('/api/')) {
             return NextResponse.json(
                 { success: false, error: 'Unauthorized' },
@@ -41,7 +36,23 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    return NextResponse.next();
+    // Validate token against today and yesterday
+    const today = Math.floor(Date.now() / 86400000);
+    for (let day = today; day >= today - 1; day--) {
+        const expected = await hashToken(`${SESSION_SECRET}:${day}`);
+        if (session === expected) {
+            return NextResponse.next();
+        }
+    }
+
+    // Invalid session
+    if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+            { success: false, error: 'Unauthorized' },
+            { status: 401 }
+        );
+    }
+    return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
