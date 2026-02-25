@@ -1,16 +1,28 @@
 {
     "projects": {
-        "my-web-app": {
-            "name": "my-web-app",
-            "composePath": "/opt/stacks/my-web-app",
+        "personal-backend": {
+            "name": "personal-backend",
+            "composePath": "/opt/apps/personal-backend",
             "composeFile": "docker-compose.yml",
-            "description": "My Web Application"
+            "description": "Personal Backend API"
         },
-        "my-api": {
-            "name": "my-api",
-            "composePath": "/opt/stacks/my-api",
+        "personal-frontend-public": {
+            "name": "personal-frontend-public",
+            "composePath": "/opt/apps/personal-frontend-public",
             "composeFile": "docker-compose.yml",
-            "description": "My Backend API"
+            "description": "Personal Frontend (Public)"
+        },
+        "personal-frontend-cms": {
+            "name": "personal-frontend-cms",
+            "composePath": "/opt/apps/personal-frontend-cms",
+            "composeFile": "docker-compose.yml",
+            "description": "Personal Frontend CMS"
+        },
+        "cloudflare": {
+            "name": "cloudflare",
+            "composePath": "/opt/apps/cloudflare",
+            "composeFile": "docker-compose.yml",
+            "description": "Cloudflare Tunnel"
         }
     }
 }

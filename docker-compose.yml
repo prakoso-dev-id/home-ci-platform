@@ -17,8 +17,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - engine-data:/data
-      # Mount your compose project directories (add as needed)
-      # - /opt/stacks:/opt/stacks:ro
+      - /opt/apps:/opt/apps
     networks:
       - home-ci
 
