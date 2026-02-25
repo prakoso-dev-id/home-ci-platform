@@ -25,6 +25,21 @@ async function composeExec(
     return `${stdout}\n${stderr}`.trim();
 }
 
+// ─── Git Operations ──────────────────────────────────────────
+
+export async function gitPull(composePath: string): Promise<string> {
+    const { stdout, stderr } = await execFileAsync(
+        'git',
+        ['pull'],
+        {
+            cwd: composePath,
+            timeout: 120_000, // 2 min timeout
+            maxBuffer: 10 * 1024 * 1024,
+        }
+    );
+    return `${stdout}\n${stderr}`.trim();
+}
+
 export async function composePull(
     composePath: string,
     composeFile: string

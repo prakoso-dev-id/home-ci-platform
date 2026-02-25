@@ -29,8 +29,8 @@ COPY --from=base /app/apps/deploy-engine/config/ ./apps/deploy-engine/config/
 
 RUN npm install --workspace=apps/deploy-engine --workspace=packages/shared-types --omit=dev
 
-# Install docker CLI for compose operations
-RUN apk add --no-cache docker-cli docker-cli-compose
+# Install docker CLI and git for compose/deploy operations
+RUN apk add --no-cache docker-cli docker-cli-compose git
 
 EXPOSE 4000
 CMD ["node", "apps/deploy-engine/dist/index.js"]

@@ -67,6 +67,12 @@ export async function deploy(projectName: string): Promise<Deployment> {
         emit(projectName, 'status', 'Deployment started', 'running');
 
         try {
+            emit(projectName, 'log', '=== Pulling latest code (git pull) ===');
+            logs.push('=== Pulling latest code (git pull) ===');
+            const gitOutput = await dockerService.gitPull(project.composePath);
+            logs.push(gitOutput);
+            emit(projectName, 'log', gitOutput);
+
             emit(projectName, 'log', '=== Pulling images ===');
             logs.push('=== Pulling images ===');
             const pullOutput = await dockerService.composePull(
