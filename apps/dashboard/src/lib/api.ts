@@ -5,19 +5,18 @@ import type {
     Deployment,
 } from '@home-ci/shared-types';
 
-const ENGINE_URL = process.env.NEXT_PUBLIC_ENGINE_URL || '/api/engine';
-const DEPLOY_TOKEN = process.env.DEPLOY_TOKEN || '';
+// Always use the dashboard's own API proxy — server-side route handles auth
+const API_BASE = '/api/engine';
 
 async function request<T>(
     path: string,
     options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-    const url = `${ENGINE_URL}${path}`;
+    const url = `${API_BASE}${path}`;
     const res = await fetch(url, {
         ...options,
         headers: {
             'Content-Type': 'application/json',
-            ...(DEPLOY_TOKEN ? { Authorization: `Bearer ${DEPLOY_TOKEN}` } : {}),
             ...options.headers,
         },
         cache: 'no-store',
